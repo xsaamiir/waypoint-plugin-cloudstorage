@@ -1,31 +1,45 @@
 # Waypoint Plugin Google Cloud Storage [**WIP**]
 
-This folder contains an example plugin structure which can be used when building your own plugins.
+waypoint-plugin-gcs is a registry plugin for [Waypoint](https://github.com/hashicorp/waypoint). 
+It allows you to upload an artifact to Google Cloud Storage.
 
-## Steps
+**This plugin is still work in progress, please open an issue for any feedback or issues.**
 
-1. To scaffold a new plugin use the `./clone.sh` script passing the destination folder and the Go package
-for your new plugin as parameters
+# Install
+To install the plugin, run the following command:
 
-```shell
-./clone.sh ../destination_folder github.com/myorg/mypackage
+````bash
+git clone git@github.com:sharkyze/waypoint-plugin-gcs.git # or gh repo clone sharkyze/waypoint-plugin-gcs
+cd waypoint-plugin-gcs
+make install # Installs the plugin in `${HOME}/.config/waypoint/plugins/`
+````
+
+# GCS Authentication
+Please follow the instructions in the [Google Cloud Run tutorial](https://learn.hashicorp.com/tutorials/waypoint/google-cloud-run?in=waypoint/deploy-google-cloud#authenticate-to-google-cloud).
+This plugin uses GCP Application Default Credentials (ADC) for authentication. More info [here](https://cloud.google.com/docs/authentication/production).
+
+# Configure
+```hcl
+project = "project"
+
+app "webapp" {
+  path = "./webapp"
+
+  build {
+    use "archive" {
+      sources = ["src/", "public/", "package.json"] # Sources are relative to /path/to/project/webapp/
+      output_name = "webapp.zip"
+      overwrite_existing = true
+    }
+
+    registry {
+       use "gcs" {
+         source = "webapp.zip"
+         name = "artifcats/webapp/${gitrefpretty()}.zip"
+         bucket = "staging.gcp-project-name.appspot.com"
+       }
+     }
+  }
+}
 ```
 
-2. You can then run the Makefile to compile the new plugin
-
-```shell
-cd ../destination_folder
-
-make
-```
-
-```shell
-Build Protos
-protoc -I . --go_opt=plugins=grpc --go_out=../../../../ ./builder/output.proto
-protoc -I . --go_opt=plugins=grpc --go_out=../../../../ ./registry/output.proto
-protoc -I . --go_opt=plugins=grpc --go_out=../../../../ ./platform/output.proto
-protoc -I . --go_opt=plugins=grpc --go_out=../../../../ ./release/output.proto
-
-Compile Plugin
-go build -o ./bin/waypoint-plugin-template ./main.go
-```
