@@ -154,18 +154,7 @@ func (r *Registry) push(ctx context.Context, source *component.Source, ui termin
 		return nil, err
 	}
 
-	attrs, err := object.Attrs(ctx)
-	if err != nil {
-		u.Step(terminal.StatusError, "Error fetching uploaded object attributes")
-		return nil, err
-	}
-
-	ml := attrs.MediaLink
-	sourceURL, err := stripQueryParams(ml)
-	if err != nil {
-		u.Step(terminal.StatusError, "Error parsing uploaded object url")
-		return nil, err
-	}
+	sourceURL := objectURL(object.BucketName(), object.ObjectName())
 
 	u.Step(terminal.StatusOK, "Artifact saved to Google Cloud Storage: '"+sourceURL+"'")
 
@@ -181,4 +170,8 @@ func stripQueryParams(u string) (string, error) {
 	pu.RawQuery = ""
 
 	return pu.String(), nil
+}
+
+func objectURL(bucket, object string) string {
+	return "https://storage.googleapis.com/" + bucket + "/" + object
 }
