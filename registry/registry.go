@@ -43,7 +43,7 @@ build {
 	}
 
 		registry {
-		use "gcs" {
+		use "cloudstorage" {
 			source = "server.zip"
 			name = "${gitrefpretty()}.zip"
 			bucket = "staging.gcp-project-name.appspot.com"
@@ -52,13 +52,13 @@ build {
 	}
 `)
 
-	doc.Output("gcs.Artifact")
+	doc.Output("cloudstorage.Artifact")
 
-	_ = doc.SetField("source", "The build artifact to upload to GCS", docs.Summary())
+	_ = doc.SetField("source", "The build artifact to upload to Google Cloud Storage", docs.Summary())
 
-	_ = doc.SetField("name", "the name of the object to create on GCS", docs.Summary())
+	_ = doc.SetField("name", "the name of the object to create on Google Cloud Storage", docs.Summary())
 
-	_ = doc.SetField("bucket", "the name of the GCS Bucket", docs.Summary())
+	_ = doc.SetField("bucket", "the name of the Google Cloud Storage Bucket", docs.Summary())
 
 	return doc, nil
 }
@@ -150,7 +150,7 @@ func (r *Registry) push(ctx context.Context, source *component.Source, ui termin
 	}
 
 	if err := wc.Close(); err != nil {
-		u.Step(terminal.StatusError, "Error closing GCS writer after file upload")
+		u.Step(terminal.StatusError, "Error closing writer after file upload")
 		return nil, err
 	}
 

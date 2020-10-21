@@ -1,4 +1,4 @@
-PLUGIN_NAME=gcs
+PLUGIN_NAME=cloudstorage
 
 all: protos build
 

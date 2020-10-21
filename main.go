@@ -3,7 +3,7 @@ package main
 import (
 	sdk "github.com/hashicorp/waypoint-plugin-sdk"
 
-	"github.com/sharkyze/waypoint-plugin-gcs/registry"
+	"github.com/sharkyze/waypoint-plugin-cloudstorage/registry"
 )
 
 func main() {
