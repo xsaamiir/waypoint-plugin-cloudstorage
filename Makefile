@@ -1,7 +1,8 @@
 PLUGIN_NAME=cloudstorage
 
-all: protos build
+all: protos build install
 
+.PHONY: protos
 protos:
 	@echo ""
 	@echo "Building Protos"
