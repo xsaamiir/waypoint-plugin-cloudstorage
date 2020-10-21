@@ -5,18 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
-	"path"
 
 	"cloud.google.com/go/storage"
-	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/docs"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/sharkyze/waypoint-plugin-archive/builder"
 )
 
 type RegistryConfig struct {
-	Source string `hcl:"source"`
 	Name   string `hcl:"name"`
 	Bucket string `hcl:"bucket"`
 }
@@ -36,25 +33,18 @@ func (r *Registry) Documentation() (*docs.Documentation, error) {
 
 	doc.Example(`
 build {
-	use "archive" {
-		sources = ["./"]
-		output_name = "server.zip"
-		overwrite_existing = true
-	}
+  use "archive" {}
 
-		registry {
-		use "cloudstorage" {
-			source = "server.zip"
-			name = "${gitrefpretty()}.zip"
-			bucket = "staging.gcp-project-name.appspot.com"
-		}
-		}
-	}
+  registry {
+    use "cloudstorage" {
+      name = "${gitrefpretty()}.zip"
+      bucket = "staging.gcp-project-name.appspot.com"
+    }
+  }
+}
 `)
 
 	doc.Output("cloudstorage.Artifact")
-
-	_ = doc.SetField("source", "The build artifact to upload to Google Cloud Storage", docs.Summary())
 
 	_ = doc.SetField("name", "the name of the object to create on Google Cloud Storage", docs.Summary())
 
@@ -77,10 +67,6 @@ func (r *Registry) ConfigSet(config interface{}) error {
 	}
 
 	// validate the config
-	if c.Source == "" {
-		return errors.New("Source artifcat should not be empty")
-	}
-
 	if c.Name == "" {
 		return errors.New("Name of the object should not be empty")
 	}
@@ -124,7 +110,11 @@ func (r *Registry) PushFunc() interface{} {
 // as an input parameter.
 // If an error is returned, Waypoint stops the execution flow and
 // returns an error to the user.
-func (r *Registry) push(ctx context.Context, source *component.Source, ui terminal.UI) (*Artifact, error) {
+func (r *Registry) push(
+	ctx context.Context,
+	ui terminal.UI,
+	archive *builder.Archive,
+) (*Artifact, error) {
 	u := ui.Status()
 	defer u.Close()
 
@@ -138,7 +128,7 @@ func (r *Registry) push(ctx context.Context, source *component.Source, ui termin
 	object := client.Bucket(r.config.Bucket).Object(r.config.Name)
 	wc := object.NewWriter(ctx)
 
-	f, err := os.Open(path.Join(source.Path, r.config.Source))
+	f, err := os.Open(archive.OutputPath)
 	if err != nil {
 		u.Step(terminal.StatusError, "Opening source file failed")
 		return nil, err
@@ -159,17 +149,6 @@ func (r *Registry) push(ctx context.Context, source *component.Source, ui termin
 	u.Step(terminal.StatusOK, "Artifact saved to Google Cloud Storage: '"+sourceURL+"'")
 
 	return &Artifact{Source: sourceURL}, nil
-}
-
-func stripQueryParams(u string) (string, error) {
-	pu, err := url.Parse(u)
-	if err != nil {
-		return "", err
-	}
-
-	pu.RawQuery = ""
-
-	return pu.String(), nil
 }
 
 func objectURL(bucket, object string) string {
